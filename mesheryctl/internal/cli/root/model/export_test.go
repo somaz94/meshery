@@ -1,19 +1,18 @@
 package model
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
 	mesheryctlflags "github.com/meshery/meshery/mesheryctl/internal/cli/pkg/flags"
 	"github.com/meshery/meshery/mesheryctl/pkg/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExportModel(t *testing.T) {
@@ -89,20 +88,11 @@ func TestExportModelToFile(t *testing.T) {
 	ModelCmd.SetOut(buf)
 
 	err := ModelCmd.Execute()
-	if err != nil {
-		t.Fatalf("expected export to succeed, got error: %v", err)
-	}
+	assert.NoError(t, err)
 
 	// The default output type "oci" produces a ".tar" file named after the model.
-	exportedPath := filepath.Join(outputDir, modelName+".tar")
-	got, readErr := os.ReadFile(exportedPath)
-	if readErr != nil {
-		t.Fatalf("expected exported file at %s: %v", exportedPath, readErr)
-	}
-	if !bytes.Equal(exportedContent, got) {
-		t.Errorf("exported content mismatch: got %q, want %q", got, exportedContent)
-	}
-	if !strings.Contains(buf.String(), "Exported model to") {
-		t.Errorf("expected completion log, got %q", buf.String())
-	}
+	got, err := os.ReadFile(filepath.Join(outputDir, modelName+".tar"))
+	assert.NoError(t, err)
+	assert.Equal(t, exportedContent, got)
+	assert.Contains(t, buf.String(), "Exported model to")
 }
